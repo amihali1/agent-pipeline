@@ -12,7 +12,7 @@ async function main() {
   console.log("=".repeat(60));
 
   const results = await runPipeline(task, {
-    agents: [engineer, tester, reviewer, designer],
+    agents: [designer, engineer, tester, reviewer],
     onAgentComplete: (result: AgentResult) => {
       const icon = result.status === "success" ? "✓" : "↩";
       console.log(`${icon} [${result.agentName}] ${result.status}`);
