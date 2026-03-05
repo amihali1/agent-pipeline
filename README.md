@@ -5,12 +5,14 @@ A sequential multi-agent pipeline powered by the Claude API. Agents hand off wor
 ## How it works
 
 ```
-Engineer → Tester → Reviewer → Designer
-              ↑         ↑
-         (revision) (revision)
+Designer → Engineer → Tester → Reviewer
+                ↑         ↑
+           (revision) (revision)
 ```
 
-Each agent receives the previous agent's output and any relevant memories from past runs. If the Tester or Reviewer finds problems, the pipeline jumps back to the Engineer (up to a configurable retry limit), then continues forward again.
+The Designer defines the spec first — UX requirements, component structure, accessibility constraints, and behaviour. The Engineer implements against that spec. The Tester verifies correctness and the Reviewer checks quality. If the Tester or Reviewer finds problems, the pipeline jumps back to the Engineer (up to a configurable retry limit), then continues forward again.
+
+Each agent also receives relevant memories from past runs, so similar tasks benefit from previous decisions.
 
 ## Setup
 
@@ -36,10 +38,10 @@ npm run dev "Create a TypeScript class that manages a job queue with priority le
 ```
 src/
 ├── agents/
-│   ├── engineer.ts    # writes the implementation
+│   ├── designer.ts    # defines the design spec before any code is written
+│   ├── engineer.ts    # implements against the designer's spec
 │   ├── tester.ts      # writes tests, can send back to engineer
 │   ├── reviewer.ts    # reviews quality, can send back to engineer
-│   ├── designer.ts    # UX/frontend review
 │   └── index.ts
 ├── memory/
 │   └── store.ts       # SQLite-backed memory (save + recall past decisions)
