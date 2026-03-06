@@ -44,9 +44,10 @@ const OUTPUT_TOOL: Anthropic.Tool = {
 export async function runAgent(
   agent: AgentConfig,
   context: PipelineContext,
-  attempt: number
+  attempt: number,
+  noMemory = false
 ): Promise<AgentOutput> {
-  const memories = memory.recall(agent.name, context.task);
+  const memories = noMemory ? [] : memory.recall(agent.name, context.task);
   const previousResult = context.history[context.history.length - 1] as AgentResult | undefined;
 
   const userMessage = buildUserMessage(context.task, memories, previousResult);

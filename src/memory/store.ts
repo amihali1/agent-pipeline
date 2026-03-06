@@ -44,6 +44,22 @@ export class MemoryStore {
       .run(id, agentName, inputHash, task, output, reasoning, new Date().toISOString());
   }
 
+  /** Returns the latest cached output for each agent that has run this exact task */
+  getCachedResults(task: string, agentNames: string[]): Map<string, MemoryRecord> {
+    const results = new Map<string, MemoryRecord>();
+    for (const name of agentNames) {
+      const hash = crypto
+        .createHash("sha256")
+        .update(name + task)
+        .digest("hex");
+      const row = this.db
+        .prepare(`SELECT * FROM memories WHERE input_hash = ? ORDER BY created_at DESC LIMIT 1`)
+        .get(hash) as MemoryRecord | undefined;
+      if (row) results.set(name, row);
+    }
+    return results;
+  }
+
   /** Returns exact match first, falls back to recent memories for this agent */
   recall(agentName: string, task: string, limit = 3): MemoryRecord[] {
     const inputHash = crypto

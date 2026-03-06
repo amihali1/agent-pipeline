@@ -5,7 +5,7 @@ export async function runPipeline(
   task: string,
   options: PipelineOptions
 ): Promise<AgentResult[]> {
-  const { agents, onAgentComplete } = options;
+  const { agents, noMemory, onAgentComplete } = options;
   const context: PipelineContext = { task, history: [] };
   const results: AgentResult[] = [];
 
@@ -19,7 +19,7 @@ export async function runPipeline(
 
     console.log(`\n[${agent.name.toUpperCase()}] Running (attempt ${attempt})...`);
 
-    const output = await runAgent(agent, context, attempt);
+    const output = await runAgent(agent, context, attempt, noMemory);
 
     const result: AgentResult = {
       ...output,
