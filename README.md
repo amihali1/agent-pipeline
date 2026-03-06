@@ -57,6 +57,32 @@ Use cached results? (y)es / (r)e-run / (f)resh run (no memory):
 
 Use `--no-memory` to skip this check entirely.
 
+### Running a single agent
+
+Run any agent individually without the full pipeline:
+
+```bash
+# Run designer on a task
+npm run agent -- designer "Build a REST API"
+
+# Run engineer with designer's output as input
+npm run agent -- engineer "Build a REST API" --input output/designer.md
+
+# Chain agents step by step
+npm run agent -- designer "Build a REST API"
+npm run agent -- engineer "Build a REST API" --input output/designer.md
+npm run agent -- tester "Build a REST API" --input output/engineer.md
+npm run agent -- reviewer "Build a REST API" --input output/tester.md
+
+# Pipe from stdin
+cat output/designer.md | npm run agent -- engineer "Build a REST API" --input -
+
+# Run without memory
+npm run agent -- designer --no-memory "Build a REST API"
+```
+
+Each run saves its output to `output/<agent>.md`, so agents can be chained manually.
+
 ### Scaffolding a project
 
 After running the pipeline, scaffold the generated code into a new project:
@@ -94,6 +120,7 @@ src/
 │   ├── runner.ts      # calls Claude with structured tool output
 │   └── pipeline.ts    # orchestrates the sequence and retry logic
 ├── scaffold.ts        # creates a project from pipeline outputs
+├── run-agent.ts       # runs a single agent independently
 ├── types.ts
 └── index.ts           # entry point, saves outputs to output/
 ```
