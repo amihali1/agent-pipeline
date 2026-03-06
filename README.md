@@ -30,7 +30,52 @@ npm install
 npm run dev
 
 # Run with a custom task
-npm run dev "Create a TypeScript class that manages a job queue with priority levels"
+npm run dev -- "Create a TypeScript class that manages a job queue with priority levels"
+
+# Run without memory (fresh start, no prior context)
+npm run dev -- --no-memory
+
+# Combine both
+npm run dev -- --no-memory "Build a REST API for managing todos"
+```
+
+Final outputs are printed to the console and saved to the `output/` directory as markdown files (e.g., `output/designer.md`, `output/engineer.md`).
+
+### Cached task detection
+
+If you run a task that has already been completed, the pipeline will prompt you instead of re-running:
+
+```
+This task has already been completed. Cached results found for all 4 agents.
+
+Use cached results? (y)es / (r)e-run / (f)resh run (no memory):
+```
+
+- **`y`** — serves cached results instantly with zero API calls
+- **`r`** — re-runs the pipeline with memory (agents see prior work as context)
+- **`f`** — re-runs from scratch with no memory injected
+
+Use `--no-memory` to skip this check entirely.
+
+### Scaffolding a project
+
+After running the pipeline, scaffold the generated code into a new project:
+
+```bash
+npm run scaffold my-new-project
+```
+
+This reads the latest agent outputs from `memory.db` and creates a ready-to-use project:
+
+- Extracts code files from the engineer and tester outputs (using `## File: path` headers)
+- Saves the designer's spec as `DESIGN.md` and reviewer notes as `REVIEW.md`
+- Generates `package.json` and `tsconfig.json` if the agents didn't include them
+- Initializes a git repository
+
+```bash
+cd my-new-project
+npm install
+npm test
 ```
 
 ## Project structure
@@ -48,8 +93,9 @@ src/
 ├── pipeline/
 │   ├── runner.ts      # calls Claude with structured tool output
 │   └── pipeline.ts    # orchestrates the sequence and retry logic
+├── scaffold.ts        # creates a project from pipeline outputs
 ├── types.ts
-└── index.ts           # entry point
+└── index.ts           # entry point, saves outputs to output/
 ```
 
 ## Adding an agent
@@ -73,6 +119,10 @@ export const myAgent: AgentConfig = {
 ## Memory
 
 Agent decisions are stored in `memory.db` (SQLite) after each successful run. On future runs, each agent automatically receives relevant past decisions as context. The DB is gitignored — delete it to start fresh.
+
+For the same task, memory recall finds an exact match and returns the agent's most recent output. For a new task, it falls back to the agent's 3 most recent memories from any task, giving it a sense of patterns from prior work.
+
+Use `--no-memory` to skip recall entirely, or delete `memory.db` to wipe all history.
 
 ## Configuration
 
