@@ -8,7 +8,10 @@ const memory = new MemoryStore();
 /** Tool that forces each agent to return structured output */
 const OUTPUT_TOOL: Anthropic.Tool = {
   name: "submit_output",
-  description: "Submit your completed output for this stage of the pipeline.",
+  description:
+    "Submit your completed output for this stage of the pipeline. " +
+    "IMPORTANT: You MUST include your COMPLETE deliverable in the 'output' field. " +
+    "Do NOT put your work in the text response — only the 'output' field will be read by the next agent.",
   input_schema: {
     type: "object",
     properties: {
@@ -20,7 +23,9 @@ const OUTPUT_TOOL: Anthropic.Tool = {
       },
       output: {
         type: "string",
-        description: "Your deliverable for this stage.",
+        description:
+          "Your COMPLETE deliverable for this stage. This is the ONLY field the next agent will see. " +
+          "Include ALL of your work here — code, specs, test suites, review notes, etc.",
       },
       feedback: {
         type: "string",
@@ -48,19 +53,39 @@ export async function runAgent(
 
   const response = await client.messages.create({
     model: "claude-opus-4-6",
-    max_tokens: 4096,
+    max_tokens: 16384,
     system: agent.systemPrompt,
     tools: [OUTPUT_TOOL],
-    tool_choice: { type: "any" },
     messages: [{ role: "user", content: userMessage }],
   });
 
-  const toolUse = response.content.find((c) => c.type === "tool_use");
-  if (!toolUse || toolUse.type !== "tool_use") {
-    throw new Error(`Agent "${agent.name}" did not call submit_output`);
-  }
+  // Extract text content (the model's main deliverable when it writes before/instead of tool use)
+  const textContent = response.content
+    .filter((c) => c.type === "text")
+    .map((c) => (c as Anthropic.TextBlock).text)
+    .join("\n\n")
+    .trim();
 
-  const output = toolUse.input as AgentOutput;
+  const toolUse = response.content.find((c) => c.type === "tool_use");
+
+  let output: AgentOutput;
+
+  if (toolUse && toolUse.type === "tool_use") {
+    const raw = toolUse.input as Record<string, unknown>;
+    output = {
+      status: (raw.status as AgentOutput["status"]) ?? "success",
+      output: (raw.output as string) || textContent || "",
+      reasoning: (raw.reasoning as string) || "",
+      feedback: raw.feedback as string | undefined,
+    };
+  } else {
+    // Model responded with text only — treat as successful output
+    output = {
+      status: "success",
+      output: textContent,
+      reasoning: "",
+    };
+  }
 
   if (output.status === "success" && output.output && output.reasoning) {
     memory.save(agent.name, context.task, output.output, output.reasoning);
