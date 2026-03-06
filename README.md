@@ -30,7 +30,30 @@ npm install
 npm run dev
 
 # Run with a custom task
-npm run dev "Create a TypeScript class that manages a job queue with priority levels"
+npm run dev -- "Create a TypeScript class that manages a job queue with priority levels"
+```
+
+Final outputs are printed to the console and saved to the `output/` directory as markdown files (e.g., `output/designer.md`, `output/engineer.md`).
+
+### Scaffolding a project
+
+After running the pipeline, scaffold the generated code into a new project:
+
+```bash
+npm run scaffold my-new-project
+```
+
+This reads the latest agent outputs from `memory.db` and creates a ready-to-use project:
+
+- Extracts code files from the engineer and tester outputs (using `## File: path` headers)
+- Saves the designer's spec as `DESIGN.md` and reviewer notes as `REVIEW.md`
+- Generates `package.json` and `tsconfig.json` if the agents didn't include them
+- Initializes a git repository
+
+```bash
+cd my-new-project
+npm install
+npm test
 ```
 
 ## Project structure
@@ -48,8 +71,9 @@ src/
 ├── pipeline/
 │   ├── runner.ts      # calls Claude with structured tool output
 │   └── pipeline.ts    # orchestrates the sequence and retry logic
+├── scaffold.ts        # creates a project from pipeline outputs
 ├── types.ts
-└── index.ts           # entry point
+└── index.ts           # entry point, saves outputs to output/
 ```
 
 ## Adding an agent
