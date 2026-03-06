@@ -62,7 +62,7 @@ export async function runAgent(
 
   const output = toolUse.input as AgentOutput;
 
-  if (output.status === "success" && output.output) {
+  if (output.status === "success" && output.output && output.reasoning) {
     memory.save(agent.name, context.task, output.output, output.reasoning);
   }
 
