@@ -104,6 +104,26 @@ npm install
 npm test
 ```
 
+## Testing
+
+The project includes a test suite built with [Vitest](https://vitest.dev/) covering the memory store, pipeline orchestration, and agent runner.
+
+```bash
+# Run tests once
+npm test
+
+# Run in watch mode
+npm run test:watch
+```
+
+Tests run automatically on push/PR to `main` via GitHub Actions (Node 18, 20, 22).
+
+### What's tested
+
+- **Memory store** — save/recall, exact match vs fallback, cache detection, agent isolation, `--no-memory` behavior, data integrity
+- **Pipeline** — sequential execution, agent handoff/revision loops, `maxRetries` enforcement, `onAgentComplete` callback
+- **Runner** — structured tool output extraction, text-only fallback, memory recall/save integration, message construction, API parameters
+
 ## Project structure
 
 ```
