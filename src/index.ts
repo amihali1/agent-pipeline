@@ -55,6 +55,13 @@ async function main() {
 
     if (cached.size === agents.length) {
       console.log(`\nThis task has already been completed. Cached results found for all ${cached.size} agents.`);
+
+      // In non-interactive mode (piped input, CI), re-run by default
+      if (!process.stdin.isTTY) {
+        console.log("Non-interactive mode detected, re-running pipeline...\n");
+        return runFresh(task);
+      }
+
       const answer = await prompt("\nUse cached results? (y)es / (r)e-run / (f)resh run (no memory): ");
 
       if (answer === "y" || answer === "yes") {

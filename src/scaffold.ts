@@ -28,15 +28,16 @@ function extractFiles(output: string): Map<string, string> {
   return files;
 }
 
-function getLatestOutputs(db: Database.Database): Map<string, string> {
+function getLatestOutputs(db: Database.Database, task: string): Map<string, string> {
   const rows = db
     .prepare(
       `SELECT agent_name, output FROM memories
-       WHERE rowid IN (
-         SELECT MAX(rowid) FROM memories GROUP BY agent_name
+       WHERE task = ?
+       AND rowid IN (
+         SELECT MAX(rowid) FROM memories WHERE task = ? GROUP BY agent_name
        )`
     )
-    .all() as Pick<MemoryRecord, "agent_name" | "output">[];
+    .all(task, task) as Pick<MemoryRecord, "agent_name" | "output">[];
 
   const outputs = new Map<string, string>();
   for (const row of rows) {
@@ -47,8 +48,10 @@ function getLatestOutputs(db: Database.Database): Map<string, string> {
 
 async function main() {
   const projectName = process.argv[2];
+  const task = process.argv[3];
   if (!projectName) {
-    console.error("Usage: npm run scaffold <project-name>");
+    console.error('Usage: npm run scaffold <project-name> [task]');
+    console.error('  If task is omitted, uses the most recent task from memory.');
     process.exit(1);
   }
 
@@ -61,7 +64,19 @@ async function main() {
 
   // Read outputs from DB
   const db = new Database(DB_PATH);
-  const outputs = getLatestOutputs(db);
+
+  // Resolve which task to scaffold
+  const resolvedTask = task
+    ?? (db.prepare(`SELECT task FROM memories ORDER BY created_at DESC LIMIT 1`).get() as { task: string } | undefined)?.task;
+
+  if (!resolvedTask) {
+    console.error("No tasks found in memory. Run the pipeline first.");
+    db.close();
+    process.exit(1);
+  }
+
+  console.log(`Task: "${resolvedTask}"`);
+  const outputs = getLatestOutputs(db, resolvedTask);
   db.close();
 
   const engineerOutput = outputs.get("engineer");
@@ -119,7 +134,11 @@ async function main() {
 
   // Initialize git repo
   console.log("\nInitializing git repository...");
-  execSync("git init", { cwd: projectDir, stdio: "inherit" });
+  try {
+    execSync("git init", { cwd: projectDir, stdio: "inherit" });
+  } catch {
+    console.warn("  Warning: git init failed. You can initialize the repo manually.");
+  }
 
   // Create a basic package.json if one wasn't generated
   const pkgPath = path.join(projectDir, "package.json");

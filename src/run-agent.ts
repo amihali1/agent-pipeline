@@ -38,22 +38,43 @@ async function readInput(inputArg: string): Promise<string> {
   return fs.readFileSync(inputArg, "utf-8").trim();
 }
 
+function parseAgentArgs(args: string[]) {
+  const flags = new Set<string>();
+  const named: Record<string, string> = {};
+  const positional: string[] = [];
+
+  for (let i = 0; i < args.length; i++) {
+    if (args[i] === "--no-memory") {
+      flags.add("no-memory");
+    } else if (args[i] === "--input") {
+      named["input"] = args[++i];
+    } else {
+      positional.push(args[i]);
+    }
+  }
+
+  return { flags, named, positional };
+}
+
 async function main() {
   const args = process.argv.slice(2);
   if (args.length === 0) usage();
 
-  const agentName = args[0];
+  const { flags, named, positional } = parseAgentArgs(args);
+
+  const agentName = positional[0];
+  if (!agentName) usage();
+
   const agent = agentMap[agentName];
   if (!agent) {
     console.error(`Unknown agent: "${agentName}". Available: ${Object.keys(agentMap).join(", ")}`);
     process.exit(1);
   }
 
-  const noMemory = args.includes("--no-memory");
-  const inputIdx = args.indexOf("--input");
-  const inputFile = inputIdx !== -1 ? args[inputIdx + 1] : undefined;
+  const noMemory = flags.has("no-memory");
+  const inputFile = named["input"];
 
-  const task = args.find((a, i) => i > 0 && !a.startsWith("--") && (inputIdx === -1 || i !== inputIdx + 1))
+  const task = positional[1]
     ?? "Create a TypeScript function that validates email addresses and returns detailed error messages for each validation failure.";
 
   console.log(`\nAgent: ${agentName}`);
