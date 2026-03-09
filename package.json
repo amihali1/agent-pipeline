@@ -3,6 +3,8 @@
   "version": "0.1.0",
   "scripts": {
     "dev": "tsx src/index.ts",
+    "agent": "tsx src/run-agent.ts",
+    "scaffold": "tsx src/scaffold.ts",
     "build": "tsc",
     "start": "node dist/index.js"
   },

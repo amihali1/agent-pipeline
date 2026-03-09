@@ -27,6 +27,7 @@ export interface PipelineContext {
 
 export interface PipelineOptions {
   agents: AgentConfig[];
+  noMemory?: boolean;
   onAgentComplete?: (result: AgentResult) => void;
 }
 
